@@ -1,0 +1,28 @@
+# Ignore Android Studio and build files
+.idea/
+*.iml
+*.gradle
+*.class
+/build/
+.gradle/
+.idea/
+local.properties
+*.apk
+*.log
+
+# Ignore Firebase config (optional, only if sensitive)
+google-services.json
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSetting```.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
