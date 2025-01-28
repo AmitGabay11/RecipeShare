@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
+    id("kotlin-kapt")
 }
 
 android {
@@ -51,22 +52,29 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation("androidx.compose.material:material:1.6.0") // Material 2 for consistent components
-    implementation("androidx.compose.material:material-icons-core:1.6.0") // Core Material icons
-    implementation("androidx.compose.material:material-icons-extended:1.6.0") // Extended Material icons
+    implementation(libs.androidx.material) // Material 2 for consistent components
+    implementation(libs.androidx.material.icons.core) // Core Material icons
+    implementation(libs.androidx.material.icons.extended) // Extended Material icons
     implementation(libs.androidx.material3) // Material 3 (optional)
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.8.0")) // Firebase BoM
-    implementation("com.google.firebase:firebase-analytics")
+    implementation(platform(libs.firebase.bom)) // Firebase BoM
+    implementation(libs.firebase.analytics)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.auth.ktx)
 
     // Coil for image loading
-    implementation("io.coil-kt:coil-compose:2.4.0") // Add Coil for loading images
+    implementation(libs.coil.compose) // Add Coil for loading images
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.7.3")
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.firebase.storage.ktx)
+
+    implementation(libs.androidx.room.runtime) // Room runtime
+    kapt("androidx.room:room-compiler:2.6.1")         // Annotation processor for Room
+    implementation(libs.androidx.room.ktx)    // Coroutines support for Room
+
+
 
     // Testing libraries
     testImplementation(libs.junit)

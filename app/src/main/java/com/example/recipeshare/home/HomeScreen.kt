@@ -1,71 +1,77 @@
-package com.example.recipeshare.ui.home
+package com.example.recipeshare.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Card
-import androidx.compose.material.FloatingActionButton
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
 import com.google.firebase.firestore.FirebaseFirestore
+import com.example.recipeshare.local.RecipeDao
+import com.example.recipeshare.local.RecipeEntity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-// Data class for a Recipe
-data class Recipe(
-    val title: String = "",
-    val description: String = "",
-    val imageUrl: String? = null,
-    val author: String = ""
-)
-
-// HomeScreen Composable
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
     val db = FirebaseFirestore.getInstance()
-    val recipes = remember { mutableStateListOf<Recipe>() }
+    val recipes = remember { mutableStateListOf<RecipeEntity>() }
 
-    // Fetch recipes from Firestore
+    // Load local recipes first
     LaunchedEffect(Unit) {
+        recipes.clear()
+        recipes.addAll(recipeDao.getAllRecipes())
+
+        // Fetch from Firestore
         db.collection("recipes").get()
             .addOnSuccessListener { result ->
-                recipes.clear()
-                for (document in result) {
-                    val recipe = document.toObject(Recipe::class.java)
-                    recipes.add(recipe)
+                val remoteRecipes = result.map {
+                    RecipeEntity(
+                        title = it.getString("title") ?: "",
+                        description = it.getString("description") ?: "",
+                        imageUrl = it.getString("imageUrl") ?: "",
+                        createdAt = it.getTimestamp("createdAt")?.toDate()?.time ?: 0L
+                    )
+                }
+
+                // Update database in coroutine
+                CoroutineScope(Dispatchers.IO).launch {
+                    recipeDao.deleteAllRecipes()
+                    recipeDao.insertRecipes(remoteRecipes)
+
+                    withContext(Dispatchers.Main) {
+                        recipes.clear()
+                        recipes.addAll(remoteRecipes)
+                    }
                 }
             }
     }
 
-    // UI Layout
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // List of Recipes
+    // UI Layout with FAB
+    Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp)
         ) {
             items(recipes) { recipe ->
-                RecipeCard(recipe = recipe)
+                RecipeCard(recipe)
             }
         }
 
-        // Floating Action Button
+        // Floating Action Button (FAB) to Add Recipe
         FloatingActionButton(
             onClick = { navController.navigate("createRecipe") },
             modifier = Modifier
-                .align(Alignment.BottomEnd)
+                .align(Alignment.BottomEnd) // ✅ FIXED: Correct alignment
                 .padding(16.dp)
         ) {
             Icon(Icons.Filled.Add, contentDescription = "Add Recipe")
@@ -73,9 +79,8 @@ fun HomeScreen(navController: NavController) {
     }
 }
 
-// RecipeCard Composable
 @Composable
-fun RecipeCard(recipe: Recipe) {
+fun RecipeCard(recipe: RecipeEntity) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -87,17 +92,9 @@ fun RecipeCard(recipe: Recipe) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Recipe Title
-            Text(
-                text = recipe.title,
-                style = androidx.compose.material.MaterialTheme.typography.h6
-            )
-            // Recipe Description
-            Text(
-                text = recipe.description,
-                style = androidx.compose.material.MaterialTheme.typography.body2
-            )
-            // Recipe Image
+            Text(recipe.title, style = MaterialTheme.typography.h6)
+            Text(recipe.description, style = MaterialTheme.typography.body2)
+
             recipe.imageUrl?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Image(
@@ -108,12 +105,8 @@ fun RecipeCard(recipe: Recipe) {
                         .height(150.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(4.dp))
-            // Recipe Author
-            Text(
-                text = "Author: ${recipe.author}",
-                style = androidx.compose.material.MaterialTheme.typography.caption
-            )
         }
     }
 }
+
+
