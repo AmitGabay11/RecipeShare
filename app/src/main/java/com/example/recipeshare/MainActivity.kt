@@ -7,30 +7,27 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.recipeshare.local.RecipeDatabase
-import com.example.recipeshare.ui.auth.AuthScreen
 import com.example.recipeshare.home.HomeScreen
-import recipe.CreateRecipeScreen
+import com.example.recipeshare.local.RecipeDatabase
+import com.example.recipeshare.ui.recipe.CreateRecipeScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize the database and DAO
+        // Initialize database and DAO
         val database = RecipeDatabase.getInstance(applicationContext)
         val recipeDao = database.recipeDao()
 
         setContent {
             val navController: NavHostController = rememberNavController()
-            NavHost(navController = navController, startDestination = "auth") {
-                composable("auth") { AuthScreen(navController) }
+            NavHost(navController = navController, startDestination = "home") {
                 composable("home") {
-                    HomeScreen(
-                        navController = navController,
-                        recipeDao = recipeDao // Pass the DAO to HomeScreen
-                    )
+                    HomeScreen(navController = navController, recipeDao = recipeDao)
                 }
-                composable("createRecipe") { CreateRecipeScreen(navController) }
+                composable("createRecipe") {
+                    CreateRecipeScreen(navController = navController, recipeDao = recipeDao)
+                }
             }
         }
     }

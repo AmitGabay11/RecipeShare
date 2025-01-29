@@ -70,9 +70,14 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.firebase.storage.ktx)
 
+    //Room
     implementation(libs.androidx.room.runtime) // Room runtime
     kapt("androidx.room:room-compiler:2.6.1")         // Annotation processor for Room
     implementation(libs.androidx.room.ktx)    // Coroutines support for Room
+
+    //Picasso
+    implementation("com.squareup.picasso:picasso:2.8")
+
 
 
 
