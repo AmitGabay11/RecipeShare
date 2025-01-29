@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
+import com.example.recipeshare.R
 import com.example.recipeshare.local.RecipeDao
 import com.example.recipeshare.local.RecipeEntity
 import com.google.firebase.firestore.FirebaseFirestore
@@ -20,8 +21,6 @@ import com.squareup.picasso.Picasso
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.example.recipeshare.R
-
 
 @Composable
 fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
@@ -29,7 +28,7 @@ fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
     val recipes = remember { mutableStateListOf<RecipeEntity>() }
     val coroutineScope = rememberCoroutineScope()
 
-    // Load local recipes first
+    // Load recipes from Room and sync with Firestore
     LaunchedEffect(Unit) {
         coroutineScope.launch(Dispatchers.IO) {
             val localRecipes = recipeDao.getAllRecipes()
@@ -38,7 +37,6 @@ fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
                 recipes.addAll(localRecipes)
             }
 
-            // Fetch remote recipes from Firestore
             db.collection("recipes").get()
                 .addOnSuccessListener { result ->
                     val remoteRecipes = result.map {
@@ -63,25 +61,32 @@ fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
         }
     }
 
-    // UI Layout with Floating Action Button
-    Box(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Recipe Share") },
+                backgroundColor = MaterialTheme.colors.primary,
+                contentColor = MaterialTheme.colors.onPrimary
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { navController.navigate("createRecipe") },
+                backgroundColor = MaterialTheme.colors.secondary
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "Add Recipe")
+            }
+        }
+    ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
             contentPadding = PaddingValues(16.dp)
         ) {
             items(recipes) { recipe ->
                 RecipeCard(recipe)
             }
-        }
-
-        // Floating Action Button for Adding New Recipe
-        FloatingActionButton(
-            onClick = { navController.navigate("createRecipe") },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = "Add Recipe")
         }
     }
 }
@@ -92,7 +97,8 @@ fun RecipeCard(recipe: RecipeEntity) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        elevation = 4.dp
+        shape = MaterialTheme.shapes.medium,
+        elevation = 6.dp
     ) {
         Column(
             modifier = Modifier
@@ -104,16 +110,15 @@ fun RecipeCard(recipe: RecipeEntity) {
 
             recipe.imageUrl?.let {
                 Spacer(modifier = Modifier.height(8.dp))
-                // Picasso for image loading and caching
                 AndroidView(
                     factory = { context ->
                         ImageView(context).apply {
                             Picasso.get()
-                                .load(it) // Load the image URL
-                                .placeholder(R.drawable.placeholder) // Show while loading
-                                .error(R.drawable.error) // Show if the image fails to load
-                                .fit() // Scale the image to fit the dimensions
-                                .centerCrop() // Crop to fit aspect ratio
+                                .load(it)
+                                .placeholder(R.drawable.placeholder)
+                                .error(R.drawable.error)
+                                .fit()
+                                .centerCrop()
                                 .into(this)
                         }
                     },

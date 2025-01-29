@@ -5,7 +5,6 @@ import android.widget.ImageView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,11 +17,12 @@ import com.example.recipeshare.local.RecipeEntity
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.squareup.picasso.Picasso
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.*
 import com.example.recipeshare.R
-
+import kotlinx.coroutines.withContext
 
 @Composable
 fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
@@ -37,72 +37,68 @@ fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        imageUri = uri
-    }
+    ) { uri: Uri? -> imageUri = uri }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Title input
-        BasicTextField(
-            value = title,
-            onValueChange = { title = it },
-            modifier = Modifier.fillMaxWidth(),
-            decorationBox = { innerTextField ->
-                if (title.isEmpty()) Text("Enter title")
-                innerTextField()
-            }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Description input
-        BasicTextField(
-            value = description,
-            onValueChange = { description = it },
-            modifier = Modifier.fillMaxWidth(),
-            decorationBox = { innerTextField ->
-                if (description.isEmpty()) Text("Enter description")
-                innerTextField()
-            }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Image picker preview
-        if (imageUri != null) {
-            AndroidView(
-                factory = { context ->
-                    ImageView(context).apply {
-                        Picasso.get()
-                            .load(imageUri.toString())
-                            .placeholder(R.drawable.placeholder)
-                            .error(R.drawable.error)
-                            .fit()
-                            .centerCrop()
-                            .into(this)
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Create Recipe") },
+                backgroundColor = MaterialTheme.colors.primary,
+                contentColor = MaterialTheme.colors.onPrimary
             )
-        } else {
-            Button(onClick = { imagePickerLauncher.launch("image/*") }) {
-                Text("Select Image")
-            }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Recipe Title") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Upload & Save Recipe
-        Button(
-            onClick = {
-                if (title.isNotEmpty() && description.isNotEmpty()) {
-                    isUploading = true
-                    coroutineScope.launch {
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Description") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (imageUri != null) {
+                AndroidView(
+                    factory = { context ->
+                        ImageView(context).apply {
+                            Picasso.get()
+                                .load(imageUri.toString())
+                                .placeholder(R.drawable.placeholder)
+                                .error(R.drawable.error)
+                                .fit()
+                                .centerCrop()
+                                .into(this)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                )
+            } else {
+                Button(onClick = { imagePickerLauncher.launch("image/*") }) {
+                    Text("Select Image")
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    coroutineScope.launch(Dispatchers.IO) {
                         try {
                             val imageUrl = uploadImageToFirebase(storage, imageUri)
                             val newRecipe = RecipeEntity(
@@ -111,50 +107,33 @@ fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
                                 imageUrl = imageUrl,
                                 createdAt = System.currentTimeMillis()
                             )
-
-                            // Save to local database (Room)
-                            withContext(Dispatchers.IO) {
-                                recipeDao.insertRecipes(listOf(newRecipe))
-                            }
-
-                            // Save to Firestore
+                            recipeDao.insertRecipes(listOf(newRecipe))
                             saveRecipeToFirestore(db, newRecipe)
 
-                            // Navigate back to home screen
-                            withContext(Dispatchers.Main) {
-                                isUploading = false
-                                navController.popBackStack()
-                            }
+                            withContext(Dispatchers.Main) { navController.popBackStack() }
                         } catch (e: Exception) {
                             e.printStackTrace()
-                            withContext(Dispatchers.Main) {
-                                isUploading = false
-                            }
                         }
                     }
-                }
-            },
-            enabled = !isUploading
-        ) {
-            Text(if (isUploading) "Uploading..." else "Save Recipe")
+                },
+                enabled = !isUploading,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (isUploading) "Uploading..." else "Save Recipe")
+            }
         }
     }
 }
 
-// Upload image to Firebase Storage and return the image URL
 suspend fun uploadImageToFirebase(storage: FirebaseStorage, uri: Uri?): String {
     if (uri == null) throw IllegalArgumentException("Image URI cannot be null")
-    val fileName = UUID.randomUUID().toString() // Generate a unique file name
+    val fileName = UUID.randomUUID().toString()
     val storageRef = storage.reference.child("recipes/$fileName")
-    storageRef.putFile(uri).await() // Upload file to Firebase Storage
-    return storageRef.downloadUrl.await().toString() // Get the download URL
+    storageRef.putFile(uri).await()
+    return storageRef.downloadUrl.await().toString()
 }
 
-// Save recipe data to Firestore
-suspend fun saveRecipeToFirestore(
-    db: FirebaseFirestore,
-    recipe: RecipeEntity
-) {
+suspend fun saveRecipeToFirestore(db: FirebaseFirestore, recipe: RecipeEntity) {
     val recipeMap = mapOf(
         "title" to recipe.title,
         "description" to recipe.description,
@@ -163,5 +142,6 @@ suspend fun saveRecipeToFirestore(
     )
     db.collection("recipes").add(recipeMap).await()
 }
+
 
 
