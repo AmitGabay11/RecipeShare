@@ -5,10 +5,10 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "recipes")
 data class RecipeEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey val id: String = "",  // 🔄 Change from Int to String
     val title: String,
     val description: String,
-    val imageUrl: String, // Store Firebase Storage image URL
-    val createdAt: Long
+    val imageUrl: String,
+    val createdAt: Long,
+    val userId: String  // ✅ Store userId here
 )
-
