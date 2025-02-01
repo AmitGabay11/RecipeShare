@@ -1,7 +1,6 @@
 package com.example.recipeshare.ui.auth
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,9 +28,7 @@ fun AuthScreen(navController: NavController) {
     var stayLoggedIn by remember { mutableStateOf(prefs.getBoolean("stay_logged_in", false)) }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -46,6 +43,7 @@ fun AuthScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(8.dp))
+
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -55,9 +53,7 @@ fun AuthScreen(navController: NavController) {
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = stayLoggedIn,
                     onCheckedChange = { stayLoggedIn = it }
@@ -89,7 +85,7 @@ fun AuthScreen(navController: NavController) {
                                 } else {
                                     prefs.edit().putBoolean("stay_logged_in", false).apply()
                                 }
-                                navController.navigate("home") // Navigate only if successful
+                                navController.navigate("home")
                             } else {
                                 errorMessage = task.exception?.message ?: "Login Failed"
                             }
@@ -102,34 +98,11 @@ fun AuthScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(
-                onClick = {
-                    if (email.isBlank() || password.isBlank()) {
-                        errorMessage = "Email and password cannot be empty!"
-                        return@TextButton
-                    }
-
-                    if (password.length < 6) {
-                        errorMessage = "Password must be at least 6 characters!"
-                        return@TextButton
-                    }
-
-                    isLoading = true
-                    auth.createUserWithEmailAndPassword(email, password)
-                        .addOnCompleteListener { task ->
-                            isLoading = false
-                            if (task.isSuccessful) {
-                                Toast.makeText(context, "Account Created", Toast.LENGTH_SHORT).show()
-                                navController.navigate("home") // Automatically navigate to home after sign-up
-                            } else {
-                                errorMessage = task.exception?.localizedMessage ?: "Sign Up Failed"
-                            }
-                        }
-                },
+                onClick = { navController.navigate("signUp") },  // ✅ Navigate to SignUpScreen
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Sign Up")
             }
-
         }
     }
 }

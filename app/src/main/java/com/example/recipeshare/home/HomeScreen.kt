@@ -31,6 +31,8 @@ fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
     val recipes = remember { mutableStateListOf<RecipeEntity>() }
     val coroutineScope = rememberCoroutineScope()
     var listener: ListenerRegistration? by remember { mutableStateOf(null) }
+    val user = auth.currentUser
+    val userName = user?.displayName ?: user?.email ?: "Guest" // Use name, email, or "Guest"
 
     LaunchedEffect(Unit) {
         listener?.remove()
@@ -83,17 +85,32 @@ fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
             }
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            contentPadding = PaddingValues(16.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
         ) {
-            items(recipes) { recipe ->
-                ReadOnlyRecipeCard(recipe)
+            // ✅ Added Greeting at the Top
+            Text(
+                text = "Hello, $userName!",
+                style = MaterialTheme.typography.h5,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                items(recipes) { recipe ->
+                    ReadOnlyRecipeCard(recipe)
+                }
             }
         }
     }
 }
 
+// ✅ This function remains unchanged
 @Composable
 fun ReadOnlyRecipeCard(recipe: RecipeEntity) {
     Card(
