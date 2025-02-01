@@ -67,6 +67,10 @@ fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
                     IconButton(onClick = { navController.navigate("myRecipes") }) {
                         Text("My Recipes")
                     }
+                    IconButton(onClick = { navController.navigate("myProfile") }) {
+                        Text("Profile")
+                    }
+
                     IconButton(onClick = {
                         auth.signOut()
                         navController.navigate("auth") { popUpTo("home") { inclusive = true } }

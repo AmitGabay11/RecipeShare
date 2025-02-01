@@ -6,6 +6,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,7 +26,6 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import recipe.uploadImageToFirebase
 
-
 @Composable
 fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
     val db = FirebaseFirestore.getInstance()
@@ -42,16 +43,31 @@ fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
     ) { uri: Uri? -> imageUri = uri }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Create Recipe") }) }
+        topBar = {
+            TopAppBar(
+                title = { Text("Create Recipe") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) { // ✅ Go Back to My Recipes
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Go Back")
+                    }
+                }
+            )
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier.padding(paddingValues).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Recipe Title") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                value = title, onValueChange = { title = it },
+                label = { Text("Recipe Title") }, modifier = Modifier.fillMaxWidth()
+            )
             Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                value = description, onValueChange = { description = it },
+                label = { Text("Description") }, modifier = Modifier.fillMaxWidth()
+            )
             Spacer(modifier = Modifier.height(16.dp))
 
             if (imageUri != null) {
@@ -64,7 +80,9 @@ fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
                     modifier = Modifier.fillMaxWidth().height(200.dp)
                 )
             } else {
-                Button(onClick = { imagePickerLauncher.launch("image/*") }) { Text("Select Image") }
+                Button(onClick = { imagePickerLauncher.launch("image/*") }) {
+                    Text("Select Image")
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -92,7 +110,7 @@ fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
 
                             withContext(Dispatchers.Main) {
                                 isUploading = false
-                                navController.popBackStack()
+                                navController.popBackStack() // ✅ Go Back to My Recipes After Saving
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -107,6 +125,7 @@ fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
         }
     }
 }
+
 
 
 

@@ -12,6 +12,7 @@ import com.example.recipeshare.home.HomeScreen
 import com.example.recipeshare.local.RecipeDatabase
 import com.example.recipeshare.ui.auth.AuthScreen
 import com.example.recipeshare.ui.auth.SignUpScreen
+import com.example.recipeshare.ui.profile.MyProfileScreen
 import com.example.recipeshare.ui.recipe.CreateRecipeScreen
 import com.example.recipeshare.ui.recipe.EditRecipeScreen
 import recipe.MyRecipesScreen
@@ -34,6 +35,7 @@ class MainActivity : ComponentActivity() {
             NavHost(navController = navController, startDestination = startDestination) {
                 composable("auth") { AuthScreen(navController = navController) }
                 composable("signUp") { SignUpScreen(navController) }
+                composable("myProfile") { MyProfileScreen(navController) }
                 composable("home") { HomeScreen(navController = navController, recipeDao = recipeDao) }
                 composable("createRecipe") { CreateRecipeScreen(navController = navController, recipeDao = recipeDao) }
                 composable("myRecipes") { MyRecipesScreen(navController = navController, recipeDao = recipeDao) }

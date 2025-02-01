@@ -61,6 +61,10 @@ fun MyRecipesScreen(navController: NavController, recipeDao: RecipeDao) {
             TopAppBar(
                 title = { Text("My Recipes") },
                 navigationIcon = {
+                    IconButton(onClick = { navController.navigate("myProfile") }) {
+                        Text("Profile")
+                    }
+
                     IconButton(onClick = { navController.navigate("home") }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back to Home")
                     }
