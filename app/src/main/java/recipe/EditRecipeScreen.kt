@@ -6,6 +6,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -20,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import recipe.uploadImageToFirebase
 
 
 @Composable
@@ -36,7 +39,7 @@ fun EditRecipeScreen(navController: NavController, recipeId: String, recipeDao: 
 
     // Fetch existing recipe data
     LaunchedEffect(recipeId) {
-        val recipe = recipeDao.getRecipeById(recipeId) // ✅ Fetch from Room
+        val recipe = recipeDao.getRecipeById(recipeId)
         recipe?.let {
             title = it.title
             description = it.description
@@ -49,7 +52,16 @@ fun EditRecipeScreen(navController: NavController, recipeId: String, recipeDao: 
     ) { uri: Uri? -> imageUri = uri }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Edit Recipe") }) }
+        topBar = {
+            TopAppBar(
+                title = { Text("Edit Recipe") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigate("myRecipes") }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back to My Recipes")
+                    }
+                }
+            )
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -94,7 +106,7 @@ fun EditRecipeScreen(navController: NavController, recipeId: String, recipeDao: 
                         isSaving = true
 
                         val newImageUrl = imageUri?.let {
-                            uploadImageToFirebase(storage, it) // ✅ Upload new image if changed
+                            uploadImageToFirebase(storage, it)
                         } ?: imageUrl
 
                         val updatedRecipe = RecipeEntity(
@@ -107,17 +119,17 @@ fun EditRecipeScreen(navController: NavController, recipeId: String, recipeDao: 
                         )
 
                         try {
-                            // ✅ Update Firestore
+                            // Update Firestore
                             db.collection("recipes").document(recipeId)
                                 .set(updatedRecipe)
                                 .await()
 
-                            // ✅ Update Room Database
+                            // Update Room Database
                             recipeDao.updateRecipe(updatedRecipe)
 
                             withContext(Dispatchers.Main) {
                                 isSaving = false
-                                navController.popBackStack()
+                                navController.navigate("myRecipes") // Navigate back after saving
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -133,5 +145,8 @@ fun EditRecipeScreen(navController: NavController, recipeId: String, recipeDao: 
         }
     }
 }
+
+
+
 
 

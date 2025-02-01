@@ -22,6 +22,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import recipe.uploadImageToFirebase
+
 
 @Composable
 fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
@@ -106,10 +108,5 @@ fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
     }
 }
 
-suspend fun uploadImageToFirebase(storage: FirebaseStorage, uri: Uri): String {
-    val fileName = uri.lastPathSegment ?: System.currentTimeMillis().toString()
-    val storageRef = storage.reference.child("recipes/$fileName")
-    storageRef.putFile(uri).await()
-    return storageRef.downloadUrl.await().toString()
-}
+
 

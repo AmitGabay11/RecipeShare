@@ -108,14 +108,20 @@ fun AuthScreen(navController: NavController) {
                         return@TextButton
                     }
 
+                    if (password.length < 6) {
+                        errorMessage = "Password must be at least 6 characters!"
+                        return@TextButton
+                    }
+
                     isLoading = true
                     auth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             isLoading = false
                             if (task.isSuccessful) {
                                 Toast.makeText(context, "Account Created", Toast.LENGTH_SHORT).show()
+                                navController.navigate("home") // Automatically navigate to home after sign-up
                             } else {
-                                errorMessage = task.exception?.message ?: "Sign Up Failed"
+                                errorMessage = task.exception?.localizedMessage ?: "Sign Up Failed"
                             }
                         }
                 },
@@ -123,6 +129,7 @@ fun AuthScreen(navController: NavController) {
             ) {
                 Text("Sign Up")
             }
+
         }
     }
 }
