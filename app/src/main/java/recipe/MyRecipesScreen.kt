@@ -7,9 +7,10 @@ import androidx.compose.foundation.lazy.items
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -59,14 +60,22 @@ fun MyRecipesScreen(navController: NavController, recipeDao: RecipeDao) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Recipes") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigate("myProfile") }) {
-                        Text("Profile")
+                title = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text("My Recipes")
                     }
-
-                    IconButton(onClick = { navController.navigate("home") }) {
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigate("home") }) { // ✅ Now goes to HomeScreen
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back to Home")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { navController.navigate("myProfile") }) {
+                        Icon(Icons.Default.AccountCircle, contentDescription = "Profile")
                     }
                 }
             )
@@ -81,7 +90,10 @@ fun MyRecipesScreen(navController: NavController, recipeDao: RecipeDao) {
         }
     ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier.padding(paddingValues).padding(16.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
         ) {
             items(recipes) { recipe ->
                 MyRecipeCard(recipe, recipeDao, recipes, navController, db) // ✅ Pass db
@@ -146,7 +158,4 @@ fun MyRecipeCard(
         }
     }
 }
-
-
-
 

@@ -7,12 +7,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.example.recipeshare.R
@@ -22,6 +27,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.squareup.picasso.Picasso
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 @Composable
 fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
@@ -31,10 +38,24 @@ fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
     val recipes = remember { mutableStateListOf<RecipeEntity>() }
     val coroutineScope = rememberCoroutineScope()
     var listener: ListenerRegistration? by remember { mutableStateOf(null) }
-    val user = auth.currentUser
-    val userName = user?.displayName ?: user?.email ?: "Guest" // Use name, email, or "Guest"
+
+    // ✅ Live Name Update from Firestore
+    var userName by remember { mutableStateOf(auth.currentUser?.displayName ?: auth.currentUser?.email ?: "Guest") }
 
     LaunchedEffect(Unit) {
+        // Fetch Name from Firestore
+        auth.currentUser?.uid?.let { userId ->
+            try {
+                val document = db.collection("users").document(userId).get().await()
+                if (document.exists()) {
+                    userName = document.getString("name") ?: userName
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        // Listen for Recipe Updates
         listener?.remove()
         listener = db.collection("recipes").addSnapshotListener { snapshot, error ->
             if (error != null) return@addSnapshotListener
@@ -62,20 +83,31 @@ fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("All Recipes") },
-                actions = {
-                    IconButton(onClick = { navController.navigate("myRecipes") }) {
-                        Text("My Recipes")
+                title = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text("All Recipes")
                     }
-                    IconButton(onClick = { navController.navigate("myProfile") }) {
-                        Text("Profile")
-                    }
-
+                },
+                navigationIcon = {
                     IconButton(onClick = {
                         auth.signOut()
                         navController.navigate("auth") { popUpTo("home") { inclusive = true } }
                     }) {
                         Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
+                    }
+                },
+                actions = {
+                    // ✅ "My Recipes" Button in the Top Bar (Before Profile)
+                    IconButton(onClick = { navController.navigate("myRecipes") }) {
+                        Icon(Icons.Default.Book, contentDescription = "My Recipes")
+                    }
+
+                    // ✅ Profile Button (On the Right)
+                    IconButton(onClick = { navController.navigate("myProfile") }) {
+                        Icon(Icons.Default.AccountCircle, contentDescription = "Profile")
                     }
                 }
             )
@@ -93,12 +125,20 @@ fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // ✅ Added Greeting at the Top
+            // ✅ Enhanced Greeting UI
             Text(
                 text = "Hello, $userName!",
-                style = MaterialTheme.typography.h5,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+            Text(
+                text = "Welcome to Recipe Share",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Light,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -114,7 +154,7 @@ fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
     }
 }
 
-// ✅ This function remains unchanged
+// ✅ Unchanged - Displays Recipe Cards
 @Composable
 fun ReadOnlyRecipeCard(recipe: RecipeEntity) {
     Card(
@@ -145,3 +185,5 @@ fun ReadOnlyRecipeCard(recipe: RecipeEntity) {
         }
     }
 }
+
+

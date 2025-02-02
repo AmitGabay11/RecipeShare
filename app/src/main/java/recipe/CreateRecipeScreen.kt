@@ -1,17 +1,20 @@
-package com.example.recipeshare.ui.recipe
+package recipe
 
 import android.net.Uri
 import android.widget.ImageView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.example.recipeshare.local.RecipeDao
@@ -24,7 +27,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import recipe.uploadImageToFirebase
 
 @Composable
 fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
@@ -36,7 +38,9 @@ fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var imageUrl by remember { mutableStateOf("") }
     var isUploading by remember { mutableStateOf(false) }
+    var showUrlInput by remember { mutableStateOf(false) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -45,9 +49,21 @@ fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Create Recipe") },
+                title = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.CenterStart // 🔥 Moves title slightly left
+                    ) {
+                        Text(
+                            text = "Create Recipe",
+                            textAlign = TextAlign.Center,
+                            fontSize = 20.sp,
+                            modifier = Modifier.padding(start = 20.dp) // ✅ Small left shift
+                        )
+                    }
+                },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) { // ✅ Go Back to My Recipes
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Go Back")
                     }
                 }
@@ -55,35 +71,63 @@ fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
         }
     ) { paddingValues ->
         Column(
-            modifier = Modifier.padding(paddingValues).padding(16.dp),
+            modifier = Modifier
+                .padding(paddingValues)
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             OutlinedTextField(
-                value = title, onValueChange = { title = it },
-                label = { Text("Recipe Title") }, modifier = Modifier.fillMaxWidth()
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Recipe Title") },
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
-                value = description, onValueChange = { description = it },
-                label = { Text("Description") }, modifier = Modifier.fillMaxWidth()
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Description") },
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (imageUri != null) {
+            if (imageUri != null || imageUrl.isNotEmpty()) {
                 AndroidView(
                     factory = { context ->
                         ImageView(context).apply {
-                            Picasso.get().load(imageUri.toString()).fit().centerCrop().into(this)
+                            Picasso.get()
+                                .load(imageUri?.toString() ?: imageUrl)
+                                .fit()
+                                .centerCrop()
+                                .into(this)
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(200.dp)
                 )
-            } else {
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Column {
                 Button(onClick = { imagePickerLauncher.launch("image/*") }) {
-                    Text("Select Image")
+                    Text("Upload Image from Device")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(onClick = { showUrlInput = !showUrlInput }) {
+                    Text(if (showUrlInput) "Hide URL Input" else "Enter Image URL")
+                }
+
+                if (showUrlInput) {
+                    OutlinedTextField(
+                        value = imageUrl,
+                        onValueChange = { imageUrl = it },
+                        label = { Text("Image URL") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
@@ -93,14 +137,14 @@ fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
 
                     coroutineScope.launch(Dispatchers.IO) {
                         try {
-                            val imageUrl = imageUri?.let { uploadImageToFirebase(storage, it) }
+                            val finalImageUrl = imageUri?.let { uploadImageToFirebase(storage, it) } ?: imageUrl
                             val recipeId = db.collection("recipes").document().id
 
                             val newRecipe = RecipeEntity(
                                 id = recipeId,
                                 title = title,
                                 description = description,
-                                imageUrl = imageUrl ?: "",
+                                imageUrl = finalImageUrl,
                                 createdAt = System.currentTimeMillis(),
                                 userId = userId
                             )
@@ -110,7 +154,7 @@ fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
 
                             withContext(Dispatchers.Main) {
                                 isUploading = false
-                                navController.popBackStack() // ✅ Go Back to My Recipes After Saving
+                                navController.popBackStack()
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -118,14 +162,14 @@ fun CreateRecipeScreen(navController: NavController, recipeDao: RecipeDao) {
                         }
                     }
                 },
-                enabled = !isUploading
+                enabled = !isUploading,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (isUploading) "Uploading..." else "Save Recipe")
             }
         }
     }
 }
-
 
 
 

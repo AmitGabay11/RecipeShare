@@ -12,9 +12,9 @@ import com.example.recipeshare.home.HomeScreen
 import com.example.recipeshare.local.RecipeDatabase
 import com.example.recipeshare.ui.auth.AuthScreen
 import com.example.recipeshare.ui.auth.SignUpScreen
-import com.example.recipeshare.ui.profile.MyProfileScreen
-import com.example.recipeshare.ui.recipe.CreateRecipeScreen
-import com.example.recipeshare.ui.recipe.EditRecipeScreen
+import recipe.MyProfileScreen
+import recipe.CreateRecipeScreen
+import recipe.EditRecipeScreen
 import recipe.MyRecipesScreen
 import com.google.firebase.auth.FirebaseAuth
 
