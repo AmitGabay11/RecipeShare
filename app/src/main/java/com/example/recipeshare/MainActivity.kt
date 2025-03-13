@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.recipeshare.home.HomeScreen
 import com.example.recipeshare.local.RecipeDatabase
+import com.example.recipeshare.trending.TrendingRecipesScreen
 import com.example.recipeshare.ui.auth.AuthScreen
 import com.example.recipeshare.ui.auth.SignUpScreen
 import recipe.MyProfileScreen
@@ -39,6 +40,8 @@ class MainActivity : ComponentActivity() {
                 composable("home") { HomeScreen(navController = navController, recipeDao = recipeDao) }
                 composable("createRecipe") { CreateRecipeScreen(navController = navController, recipeDao = recipeDao) }
                 composable("myRecipes") { MyRecipesScreen(navController = navController, recipeDao = recipeDao) }
+                composable("trendingRecipes") { TrendingRecipesScreen(navController) }
+
                 composable("editRecipe/{recipeId}") { backStackEntry ->
                     val recipeId = backStackEntry.arguments?.getString("recipeId") ?: ""
                     EditRecipeScreen(navController = navController, recipeId = recipeId, recipeDao = recipeDao)

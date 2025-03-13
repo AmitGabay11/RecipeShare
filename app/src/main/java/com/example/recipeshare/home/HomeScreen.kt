@@ -5,11 +5,13 @@ import android.widget.ImageView
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,11 +41,9 @@ fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
     val coroutineScope = rememberCoroutineScope()
     var listener: ListenerRegistration? by remember { mutableStateOf(null) }
 
-    // ✅ Live Name Update from Firestore
     var userName by remember { mutableStateOf(auth.currentUser?.displayName ?: auth.currentUser?.email ?: "Guest") }
 
     LaunchedEffect(Unit) {
-        // Fetch Name from Firestore
         auth.currentUser?.uid?.let { userId ->
             try {
                 val document = db.collection("users").document(userId).get().await()
@@ -55,7 +55,6 @@ fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
             }
         }
 
-        // Listen for Recipe Updates
         listener?.remove()
         listener = db.collection("recipes").addSnapshotListener { snapshot, error ->
             if (error != null) return@addSnapshotListener
@@ -100,7 +99,13 @@ fun HomeScreen(navController: NavController, recipeDao: RecipeDao) {
                     }
                 },
                 actions = {
-                    // ✅ "My Recipes" Button in the Top Bar (Before Profile)
+                    // ✅ "Star" Button (Left of "My Recipes")
+                    IconButton(onClick = { navController.navigate("trendingRecipes") }) {
+                        Icon(Icons.Default.Star, contentDescription = "Trending Recipes")
+                    }
+
+
+                    // ✅ "My Recipes" Button (Right of "Star")
                     IconButton(onClick = { navController.navigate("myRecipes") }) {
                         Icon(Icons.Default.Book, contentDescription = "My Recipes")
                     }
@@ -185,5 +190,6 @@ fun ReadOnlyRecipeCard(recipe: RecipeEntity) {
         }
     }
 }
+
 
 
