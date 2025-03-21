@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -18,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
+import com.example.recipeshare.api.Recipe
 
 @Composable
 fun TrendingRecipesScreen(navController: NavController) {
@@ -53,7 +53,10 @@ fun TrendingRecipesScreen(navController: NavController) {
             } else {
                 LazyColumn {
                     items(recipes) { recipe ->
-                        TrendingRecipeCard(recipe) { uriHandler.openUri(recipe.sourceUrl ?: "") }
+                        val spoonacularUrl = "https://spoonacular.com/recipes/${recipe.title.toSlug()}-${recipe.id}"
+                        TrendingRecipeCard(recipe) {
+                            uriHandler.openUri(spoonacularUrl)
+                        }
                     }
                 }
             }
@@ -62,7 +65,7 @@ fun TrendingRecipesScreen(navController: NavController) {
 }
 
 @Composable
-fun TrendingRecipeCard(recipe: com.example.recipeshare.api.Recipe, onClick: () -> Unit) {
+fun TrendingRecipeCard(recipe: Recipe, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -74,11 +77,21 @@ fun TrendingRecipeCard(recipe: com.example.recipeshare.api.Recipe, onClick: () -
             Image(
                 painter = rememberImagePainter(recipe.image),
                 contentDescription = recipe.title,
-                modifier = Modifier.fillMaxWidth().height(150.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(recipe.title, style = MaterialTheme.typography.h6)
             Text("Tap to View Recipe", color = MaterialTheme.colors.primary)
         }
     }
+}
+
+fun String.toSlug(): String {
+    return this
+        .lowercase()
+        .replace(Regex("[^a-z0-9\\s]"), "")
+        .trim()
+        .replace("\\s+".toRegex(), "-")
 }

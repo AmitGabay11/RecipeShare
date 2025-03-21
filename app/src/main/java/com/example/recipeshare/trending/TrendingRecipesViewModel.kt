@@ -20,7 +20,7 @@ class TrendingRecipesViewModel : ViewModel() {
         fetchTrendingRecipes()
     }
 
-    fun fetchTrendingRecipes() {
+    private fun fetchTrendingRecipes() {
         viewModelScope.launch {
             isLoading.value = true
             errorMessage.value = null
